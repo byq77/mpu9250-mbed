@@ -1,0 +1,21 @@
+{
+    "name": "mpu9250-lib",
+    "macros": ["MPU9250","AK8963_SECONDARY","COMPASS_ENABLED"],
+    "config": {
+        "i2c-sda": {
+            "help": "mpu9250 i2c sda pin",
+            "macro_name": "MPU9250_I2C_SDA",
+            "value": "I2C_SDA"
+        },
+        "i2c-scl": {
+            "help": "mpu9250 i2c scl pin",
+            "macro_name": "MPU9250_I2C_SCL",
+            "value": "I2C_SCL"
+        },
+        "i2c-frequency": {
+            "help": "mpu9250 i2c frequency",
+            "macro_name": "MPU9250_I2C_FREQUENCY",
+            "value": 100000
+        },
+    }
+}
