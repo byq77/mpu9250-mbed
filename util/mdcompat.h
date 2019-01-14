@@ -1,13 +1,12 @@
 #ifndef MY_I2C_H_INCLUDED
 #define MY_I2C_H_INCLUDED
- 
+
 /**
  * Compatiblity Declarations
  */
 #define PI 3.1415926536
 unsigned short constrain(unsigned short x,unsigned short a, unsigned short b);
-extern I2C imu_i2c;
-extern Timer imu_timer;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

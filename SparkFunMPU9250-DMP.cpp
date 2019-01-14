@@ -14,12 +14,14 @@ Now angles are correct too. https://github.com/sparkfun/SparkFun_MPU-9250-DMP_Ar
 ******************************************************************************/
 #include "SparkFunMPU9250-DMP.h"
 #include "MPU9250_RegisterMap.h"
-#include "util/mdcomapt.h"
+#include "util/mdcompat.h"
 
 extern "C" {
 #include "util/inv_mpu.h"
 }
 
+extern I2C imu_i2c;
+extern Timer imu_timer;
 static unsigned char mpu9250_orientation;
 static unsigned char tap_count;
 static unsigned char tap_direction;

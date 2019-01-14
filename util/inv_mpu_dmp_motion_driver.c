@@ -33,10 +33,11 @@
  * get_ms(unsigned long *count)
  */
 #include "mdcompat.h"
+// #include "mdcompat_log.h"
 #define i2c_write(a, b, c, d) mbed_i2c_write(a, b, c, d)
 #define i2c_read(a, b, c, d)  mbed_i2c_read(a, b, c, d)
-#define log_i     _MLPrintLog
-#define log_e     _MLPrintLog 
+#define log_i(...)     do {}while(0)
+#define log_e(...)     do {}while(0)
 
 /* These defines are copied from dmpDefaultMPU6050.c in the general MPL
  * releases. These defines may change for each DMP image, so be sure to modify

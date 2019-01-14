@@ -131,5 +131,10 @@ int mpu_run_self_test(long *gyro, long *accel);
 int mpu_run_6500_self_test(long *gyro, long *accel, unsigned char debug);
 int mpu_register_tap_cb(void (*func)(unsigned char, unsigned char));
 
+//===============
+void mpu_write_reg(unsigned char reg, unsigned char *data);
+int mpu_reset_dmp(void);
+//===============
+
 #endif  /* #ifndef _INV_MPU_H_ */
 

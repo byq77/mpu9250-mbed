@@ -37,10 +37,11 @@
  * min(int a, int b)
  */
 #include "mdcompat.h"
+// #include "mdcompat_log.h"
 #define i2c_write(a, b, c, d) mbed_i2c_write(a, b, c, d)
 #define i2c_read(a, b, c, d)  mbed_i2c_read(a, b, c, d)
-#define log_i     _MLPrintLog
-#define log_e     _MLPrintLog 
+#define log_i(...)     do {}while(0)
+#define log_e(...)     do {}while(0)
 
 #if !defined MPU6050 && !defined MPU9150 && !defined MPU6500 && !defined MPU9250
 #error  Which gyro are you using? Define MPUxxxx in your compiler options.
@@ -620,7 +621,12 @@ int mpu_read_reg(unsigned char reg, unsigned char *data)
         return -1;
     return i2c_read(st.hw->addr, reg, 1, data);
 }
-
+//====
+void mpu_write_reg(unsigned char reg, unsigned char *data)
+{
+    i2c_write(st.hw->addr, reg, 1, data);
+}
+//====
 /**
  *  @brief      Initialize hardware.
  *  Initial configuration:\n
@@ -696,7 +702,7 @@ int mpu_init(struct int_param_s *int_param)
 
 #ifndef EMPL_TARGET_STM32F4    
     if (int_param)
-        reg_int_cb(int_param);
+        // reg_int_cb(int_param);
 #endif
 
 #ifdef AK89xx_SECONDARY
@@ -1098,6 +1104,17 @@ int mpu_reset_fifo(void)
         if (i2c_write(st.hw->addr, st.reg->fifo_en, 1, &st.chip_cfg.fifo_enable))
             return -1;
     }
+    return 0;
+}
+
+int mpu_reset_dmp(void) 
+{
+    unsigned char data;
+    data = BIT_FIFO_RST | BIT_DMP_RST | 0x01;
+    if (i2c_write(st.hw->addr, st.reg->user_ctrl, 1, &data))
+        return -1;
+    delay_ms(50);
+    
     return 0;
 }
 

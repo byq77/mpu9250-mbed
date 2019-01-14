@@ -16,6 +16,6 @@
             "help": "mpu9250 i2c frequency",
             "macro_name": "MPU9250_I2C_FREQUENCY",
             "value": 100000
-        },
+        }
     }
 }

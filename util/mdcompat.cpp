@@ -1,5 +1,5 @@
-#include <mbed.h>
 #include "mdcompat.h"
+#include <mbed.h>
  // must be out of the scope of extern "C"
 
 I2C imu_i2c(MPU9250_I2C_SDA, MPU9250_I2C_SCL);
@@ -31,7 +31,7 @@ int mbed_i2c_write(
     }
     const char* x=(const char*)buffer;//
     
-    i2c.write((int)slave_addr<<1,x,length+1,0);//sending register adress first to indicate which register we are writing and a write register(0)
+    imu_i2c.write((int)slave_addr<<1,x,length+1,0);//sending register adress first to indicate which register we are writing and a write register(0)
     return 0;
 }
  
@@ -44,8 +44,8 @@ int mbed_i2c_read(
     for(int i=0;i<length;i++){
         buffer[i]=data[i];
     }
-    i2c.write((int)slave_addr<<1,RA, 1, 1); // no stop
-    i2c.read((int)slave_addr<<1,(char*)data, length, 0); 
+    imu_i2c.write((int)slave_addr<<1,RA, 1, 1); // no stop
+    imu_i2c.read((int)slave_addr<<1,(char*)data, length, 0); 
     return 0; 
 }
 
@@ -58,7 +58,7 @@ int delay_ms(
 
 void get_ms(unsigned long *count)
 {
-    (void *)count;
+    *count=imu_timer.read_ms();
 }
 
 int reg_int_cb(
@@ -66,6 +66,9 @@ int reg_int_cb(
     unsigned char port,
     unsigned char pin)
 {
+    (void*)cb;
+    (void*)port;
+    (void*)pin;
     return 0;
 }
 
