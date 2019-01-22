@@ -49,7 +49,8 @@ inv_error_t MPU9250_DMP::begin(void)
 	if (result)
 		return result;
 	
-	mpu_set_bypass(1); // Place all slaves (including compass) on primary bus
+	// mpu_set_bypass(1); // Place all slaves (including compass) on primary bus
+	mpu_set_bypass(0); // do not place compass on primary bus
 	
 	setSensors(INV_XYZ_GYRO | INV_XYZ_ACCEL);
 	// setSensors(INV_XYZ_GYRO | INV_XYZ_ACCEL | INV_XYZ_COMPASS);

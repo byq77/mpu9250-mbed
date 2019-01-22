@@ -1,6 +1,6 @@
 {
     "name": "mpu9250-lib",
-    "macros": ["MPU9250","AK8963_SECONDARY","COMPASS_ENABLED"],
+    "macros": ["MPU9250"],
     "config": {
         "i2c-sda": {
             "help": "mpu9250 i2c sda pin",
