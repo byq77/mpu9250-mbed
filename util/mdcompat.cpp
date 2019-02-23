@@ -1,9 +1,12 @@
 #include "mdcompat.h"
 #include <mbed.h>
+#define BUFFER_SIZE 128
 // must be out of the scope of extern "C"
 
 I2C imu_i2c(MPU9250_I2C_SDA, MPU9250_I2C_SCL);
 Timer imu_timer;
+
+static uint8_t i2c_buffer[BUFFER_SIZE];
 
 unsigned short constrain(
     unsigned short x,
@@ -23,12 +26,12 @@ int mbed_i2c_write(
     unsigned char reg_addr,
     unsigned char length,
     unsigned char *data) {
-    const char RA[] = {reg_addr};
-    int result;
-    result = imu_i2c.write((int)slave_addr << 1, RA, 1, 1);
-    const char* x=(const char*)data;
-    result =  imu_i2c.write((int)slave_addr<<1,x,length,0);
-    return result;
+    i2c_buffer[0] = reg_addr;
+    memcpy(i2c_buffer+1,data,length);
+    int result = imu_i2c.write((int)slave_addr << 1, (char*)i2c_buffer, length+1, 0);
+    //FIXME: debug return errors for CORE2 target 
+    //TODO: change to nonblocking using transfer()
+    return 0;
 }
 
 int mbed_i2c_read(
@@ -37,13 +40,13 @@ int mbed_i2c_read(
     unsigned char length,
     unsigned char *data)
 {
+    int result = 0;
     const char RA[] = {reg_addr};
-    int result;
-    result = imu_i2c.write((int)slave_addr << 1, RA, 1, 0);
-    if(result)
-        return result;
-    result = imu_i2c.read((int)slave_addr << 1, (char *)data, length, 0);
-    return result;
+    result += imu_i2c.write((int)slave_addr << 1, RA, 1, 1);
+    result += imu_i2c.read((int)slave_addr << 1, (char *)data, length, 0);
+    //FIXME: debug return errors for CORE2 target
+    //TODO: change to nonblocking using transfer()
+    return 0;
 }
 
 int delay_ms(
