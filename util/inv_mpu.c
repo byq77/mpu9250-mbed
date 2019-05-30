@@ -71,17 +71,19 @@
 #ifndef MPU6500
 #define MPU6500
 #endif                          /* #ifndef MPU6500 */
-#if defined AK8975_SECONDARY
-#error "MPU9250 and AK8975_SECONDARY cannot both be defined."
-#elif !defined AK8963_SECONDARY /* #if defined AK8975_SECONDARY */
-#define AK8963_SECONDARY
-#endif                          /* #if defined AK8975_SECONDARY */
-#endif                          /* #if defined MPU9150 */
+/*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+// #if defined AK8975_SECONDARY
+// #error "MPU9250 and AK8975_SECONDARY cannot both be defined."
+// #elif !defined AK8963_SECONDARY /* #if defined AK8975_SECONDARY */
+// #define AK8963_SECONDARY
+// #endif                          /* #if defined AK8975_SECONDARY */
+// #endif                          /* #if defined MPU9150 */
 
-#if defined AK8975_SECONDARY || defined AK8963_SECONDARY
-#define AK89xx_SECONDARY
-#else
+// #if defined AK8975_SECONDARY || defined AK8963_SECONDARY
+// #define AK89xx_SECONDARY
+// #else
 /* #warning "No compass = less profit for Invensense. Lame." */
+/*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 #endif
 
 //static int set_int_enable(unsigned char enable);
