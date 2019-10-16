@@ -64,7 +64,7 @@ int mbed_i2c_write(
     {
         return 1;
     }
-    while(imu_i2c.){ThisThread::yield();}//FIXME better impl
+    while(i2c_busy){ThisThread::yield();}//FIXME better impl
     return 0;
 }
 
@@ -87,7 +87,6 @@ int mbed_i2c_read(
     const char RA[] = {reg_addr};
     result += imu_i2c.write((int)slave_addr << 1, RA, 1, 1);
     result += imu_i2c.read((int)slave_addr << 1, (char *)data, length, 0);
-    //TODO: change to nonblocking using transfer()
     return result;
 }
 
@@ -99,7 +98,6 @@ int mbed_i2c_write(
     i2c_buffer[0] = reg_addr;
     memcpy((void *)i2c_buffer+1,data,length);
     int result = imu_i2c.write((int)slave_addr << 1, (char*)i2c_buffer, length+1, 0);
-    //TODO: change to nonblocking using transfer()
     return result;
 }
 
