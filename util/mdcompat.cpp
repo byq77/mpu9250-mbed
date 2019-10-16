@@ -6,7 +6,8 @@
 I2C imu_i2c(MPU9250_I2C_SDA, MPU9250_I2C_SCL);
 Timer imu_timer;
 
-static uint8_t i2c_buffer[BUFFER_SIZE];
+volatile uint8_t i2c_buffer[BUFFER_SIZE];
+volatile bool i2c_busy = false;
 
 unsigned short constrain(
     unsigned short x,
@@ -19,7 +20,36 @@ unsigned short constrain(
     return result;
 }
 
-extern "C" {
+#if defined(MPU9250_I2C_RTOS_IMPL) && MPU9250_I2C_RTOS_IMPL > 0
+
+int delay_ms(
+    unsigned long num_ms)
+{
+    ThisThread::sleep_for(num_ms);
+    return 0;
+}
+
+static void i2c_event_handler_cb(int res)
+{
+    i2c_busy = false;
+}
+
+int mbed_i2c_read(
+    unsigned char slave_addr,
+    unsigned char reg_addr,
+    unsigned char length,
+    unsigned char *data)
+{
+    i2c_busy = true;
+    // const char RA[] = {reg_addr};
+    int status = imu_i2c.transfer((int)slave_addr << 1,(char*)&reg_addr,1,(char *)data,length,i2c_event_handler_cb); 
+    if(status!=0)
+    {
+        return 1;
+    }
+    while(i2c_busy){ThisThread::yield();} //FIXME better impl
+    return 0;
+}
 
 int mbed_i2c_write(
     unsigned char slave_addr,
@@ -27,10 +57,23 @@ int mbed_i2c_write(
     unsigned char length,
     unsigned char *data) {
     i2c_buffer[0] = reg_addr;
-    memcpy(i2c_buffer+1,data,length);
-    int result = imu_i2c.write((int)slave_addr << 1, (char*)i2c_buffer, length+1, 0);
-    //FIXME: debug return errors for CORE2 target 
-    //TODO: change to nonblocking using transfer()
+    memcpy((void *)i2c_buffer+1,data,length);
+    i2c_busy = true;
+    int status = imu_i2c.transfer((int)slave_addr << 1,(char*)&i2c_buffer,length+1,NULL,0,i2c_event_handler_cb); 
+    if(status!=0)
+    {
+        return 1;
+    }
+    while(imu_i2c.){ThisThread::yield();}//FIXME better impl
+    return 0;
+}
+
+#else
+
+int delay_ms(
+    unsigned long num_ms)
+{
+    wait_ms(num_ms);
     return 0;
 }
 
@@ -44,17 +87,24 @@ int mbed_i2c_read(
     const char RA[] = {reg_addr};
     result += imu_i2c.write((int)slave_addr << 1, RA, 1, 1);
     result += imu_i2c.read((int)slave_addr << 1, (char *)data, length, 0);
-    //FIXME: debug return errors for CORE2 target
     //TODO: change to nonblocking using transfer()
-    return 0;
+    return result;
 }
 
-int delay_ms(
-    unsigned long num_ms)
-{
-    wait_ms(num_ms);
-    return 0;
+int mbed_i2c_write(
+    unsigned char slave_addr,
+    unsigned char reg_addr,
+    unsigned char length,
+    unsigned char *data) {
+    i2c_buffer[0] = reg_addr;
+    memcpy((void *)i2c_buffer+1,data,length);
+    int result = imu_i2c.write((int)slave_addr << 1, (char*)i2c_buffer, length+1, 0);
+    //TODO: change to nonblocking using transfer()
+    return result;
 }
+
+#endif /*MBED_CONF_RTOS_PRESENT*/
+
 
 void get_ms(unsigned long *count)
 {
@@ -83,4 +133,3 @@ int min(int a, int b)
 {
     return a > b ? b : a;
 }
-};

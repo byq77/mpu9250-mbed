@@ -16,6 +16,12 @@
             "help": "mpu9250 i2c frequency",
             "macro_name": "MPU9250_I2C_FREQUENCY",
             "value": 100000
+        },
+        "non-blocking": {
+            "help": "Non blocking i2c impl (RTOS)",
+            "macro_name": "MPU9250_I2C_RTOS_IMPL",
+            "value": 0
         }
+        
     }
 }
