@@ -20,8 +20,8 @@ extern "C" {
 #include "util/inv_mpu.h"
 }
 
-extern I2C imu_i2c;
-extern Timer imu_timer;
+extern I2C * imu_i2c;
+extern Timer * imu_timer;
 static unsigned char mpu9250_orientation;
 static unsigned char tap_count;
 static unsigned char tap_direction;
@@ -41,8 +41,18 @@ inv_error_t MPU9250_DMP::begin(void)
 	inv_error_t result;
     struct int_param_s int_param;
 	
-	imu_timer.start();
-	imu_i2c.frequency(MPU9250_I2C_FREQUENCY);
+    if(imu_timer == NULL && imu_i2c == NULL)
+    {
+        imu_timer = new Timer();
+        imu_i2c = new I2C(MPU9250_I2C_SDA, MPU9250_I2C_SCL);
+    	imu_timer->start();
+    }
+    else
+    {
+        delete imu_i2c;
+        imu_i2c = new I2C(MPU9250_I2C_SDA, MPU9250_I2C_SCL);
+    }
+	imu_i2c->frequency(MPU9250_I2C_FREQUENCY);
 
 	result = mpu_init(&int_param);
 	
