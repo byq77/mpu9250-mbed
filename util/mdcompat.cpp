@@ -9,8 +9,8 @@
     #define TIMEOUT_NON_BLOCKING_BYTE ((SystemCoreClock / 100000U) * 3 * 10)
 #endif
 
-I2C * imu_i2c = NULL;
-Timer * imu_timer = NULL;
+static I2C * imu_i2c = NULL;
+static Timer * imu_timer = NULL;
 
 volatile uint8_t i2c_buffer[BUFFER_SIZE];
 volatile uint8_t transmission_status;
@@ -27,6 +27,21 @@ unsigned short constrain(
 }
 
 #if defined(MPU9250_I2C_RTOS_IMPL) && MPU9250_I2C_RTOS_IMPL > 0
+
+void init_i2c(void)
+{
+    if(imu_timer == NULL && imu_i2c == NULL)
+    {
+        // imu_timer = new Timer();
+        imu_i2c = new I2C(MPU9250_I2C_SDA, MPU9250_I2C_SCL);
+    	// imu_timer->start();
+    }
+    else
+    {
+        imu_i2c->abort_transfer();
+    }
+	imu_i2c->frequency(MPU9250_I2C_FREQUENCY);
+}
 
 int delay_ms(
     unsigned long num_ms)
@@ -105,7 +120,28 @@ int mbed_i2c_write(
     return (transmission_status = I2C_EVENT_TRANSFER_COMPLETE & transmission_status ? 0 : 1);
 }
 
+void get_ms(unsigned long *count)
+{
+    // *count=imu_timer->read_ms();
+    *count=Kernel::get_ms_count();
+}
+
 #else
+
+void init_i2c(void)
+{
+    if(imu_timer == NULL && imu_i2c == NULL)
+    {
+        imu_timer = new Timer();
+        imu_i2c = new I2C(MPU9250_I2C_SDA, MPU9250_I2C_SCL);
+    	imu_timer->start();
+    }
+    else
+    {
+        imu_i2c->abort_transfer();
+    }
+	imu_i2c->frequency(MPU9250_I2C_FREQUENCY);
+}
 
 int delay_ms(
     unsigned long num_ms)
@@ -140,13 +176,13 @@ int mbed_i2c_write(
     // return 0;
 }
 
-#endif /*MBED_CONF_RTOS_PRESENT*/
-
-
 void get_ms(unsigned long *count)
 {
     *count=imu_timer->read_ms();
+    // *count=Kernel::get_ms_count();
 }
+
+#endif /*MBED_CONF_RTOS_PRESENT*/
 
 int reg_int_cb(
     void (*cb)(void),

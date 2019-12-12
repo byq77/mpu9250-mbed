@@ -41,18 +41,7 @@ inv_error_t MPU9250_DMP::begin(void)
 	inv_error_t result;
     struct int_param_s int_param;
 	
-    if(imu_timer == NULL && imu_i2c == NULL)
-    {
-        imu_timer = new Timer();
-        imu_i2c = new I2C(MPU9250_I2C_SDA, MPU9250_I2C_SCL);
-    	imu_timer->start();
-    }
-    else
-    {
-        delete imu_i2c;
-        imu_i2c = new I2C(MPU9250_I2C_SDA, MPU9250_I2C_SCL);
-    }
-	imu_i2c->frequency(MPU9250_I2C_FREQUENCY);
+    init_i2c();
 
 	result = mpu_init(&int_param);
 	

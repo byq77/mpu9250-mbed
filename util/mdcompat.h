@@ -39,6 +39,8 @@ long labs(long x);
 float fabsf(float x);
  
 int min(int a, int b);
+
+void init_i2c(void);
  
  
 #ifdef __cplusplus
