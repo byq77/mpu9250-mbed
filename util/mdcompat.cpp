@@ -1,6 +1,9 @@
 #include "mdcompat.h"
 #include <mbed.h>
 #define BUFFER_SIZE 128
+#define I2C_EVENT_TIMEOUT (1 << 5)
+#define I2C_EVENT_BUSSY 0xff
+static Timeout timeout;
 // must be out of the scope of extern "C"
 
 #if defined(MPU9250_I2C_FREQUENCY)
@@ -13,7 +16,7 @@ static I2C * imu_i2c = NULL;
 static Timer * imu_timer = NULL;
 
 volatile uint8_t i2c_buffer[BUFFER_SIZE];
-volatile uint8_t transmission_status;
+volatile int transmission_status;
 
 unsigned short constrain(
     unsigned short x,
@@ -50,6 +53,11 @@ int delay_ms(
     return 0;
 }
 
+static void i2c_timeout_cb()
+{
+    if(transmission_status==I2C_EVENT_BUSSY) transmission_status = I2C_EVENT_TIMEOUT;
+}
+
 static void i2c_event_handler_cb(int event)
 {
    /*
@@ -57,9 +65,10 @@ static void i2c_event_handler_cb(int event)
     *#define I2C_EVENT_ERROR_NO_SLAVE      (1 << 2)
     *#define I2C_EVENT_TRANSFER_COMPLETE   (1 << 3)
     *#define I2C_EVENT_TRANSFER_EARLY_NACK (1 << 4)
+    *#define I2C_EVENT_TIMEOUT             (1 << 5)
     *#define I2C_EVENT_ALL                 (I2C_EVENT_ERROR |  I2C_EVENT_TRANSFER_COMPLETE | I2C_EVENT_ERROR_NO_SLAVE | I2C_EVENT_TRANSFER_EARLY_NACK)
     */
-    transmission_status = (uint8_t)event;
+    transmission_status = event;
 }
 
 int mbed_i2c_read(
@@ -68,27 +77,29 @@ int mbed_i2c_read(
     unsigned char length,
     unsigned char *data)
 {
-    int guard = TIMEOUT_NON_BLOCKING_BYTE * (length + 3); //TODO: find better method for timeout
-    transmission_status = 0xff; // set flag
+    transmission_status = I2C_EVENT_BUSSY; // set flag
     
     if(imu_i2c->transfer((int)slave_addr << 1,(const char*)&reg_addr,1,(char *)data,length,i2c_event_handler_cb)!=0)
     {
         // busy
         return 1;
     }
-    while(transmission_status == 0xff && guard--)
-    // while(transmission_status == 0xff)
-    {
-        ThisThread::yield();
-        if(guard==0)
-        {
-            // debug_print("transferInternal: TIMEOUT!\r\n");
-            imu_i2c->abort_transfer();
-            return 1;
-        }
-    }
+    
+    timeout.attach_us(callback(i2c_timeout_cb), TIMEOUT_NON_BLOCKING_BYTE * (length + 3));
+    
+    while(transmission_status == I2C_EVENT_BUSSY){ThisThread::yield();}
+    
     // decode the event
-    return (transmission_status = I2C_EVENT_TRANSFER_COMPLETE & transmission_status ? 0 : 1);
+    if(transmission_status == I2C_EVENT_TIMEOUT)
+    {
+        imu_i2c->abort_transfer();
+        return 1;
+    }
+    else if(transmission_status == I2C_EVENT_TRANSFER_COMPLETE)
+    {
+        return 0;
+    }
+    return 1;
 }
 
 int mbed_i2c_write(
@@ -96,8 +107,7 @@ int mbed_i2c_write(
     unsigned char reg_addr,
     unsigned char length,
     unsigned char *data) {
-    int guard = TIMEOUT_NON_BLOCKING_BYTE * (length + 3); //TODO: find better method for timeout
-    transmission_status = 0xff; // set flag
+    transmission_status = I2C_EVENT_BUSSY; // set flag
     i2c_buffer[0] = reg_addr;
     memcpy((void *)i2c_buffer+1,data,length);
     if(imu_i2c->transfer((int)slave_addr << 1,(char*)&i2c_buffer,length+1,NULL,0,i2c_event_handler_cb)!=0) 
@@ -105,19 +115,21 @@ int mbed_i2c_write(
         // busy
         return 1;
     }
-    while(transmission_status == 0xff && guard--)
-    // while(transmission_status == 0xff)
-    {
-        ThisThread::yield();
-        if(guard==0)
-        {
-            // debug_print("transferInternal: TIMEOUT!\r\n");
-            imu_i2c->abort_transfer();
-            return 1;
-        }
-    }
+    timeout.attach_us(callback(i2c_timeout_cb), TIMEOUT_NON_BLOCKING_BYTE * (length + 3));
+    
+    while(transmission_status == I2C_EVENT_BUSSY){ThisThread::yield();}
+    
     // decode the event
-    return (transmission_status = I2C_EVENT_TRANSFER_COMPLETE & transmission_status ? 0 : 1);
+    if(transmission_status == I2C_EVENT_TIMEOUT)
+    {
+        imu_i2c->abort_transfer();
+        return 1;
+    }
+    else if(transmission_status == I2C_EVENT_TRANSFER_COMPLETE)
+    {
+        return 0;
+    }
+    return 1;
 }
 
 void get_ms(unsigned long *count)
