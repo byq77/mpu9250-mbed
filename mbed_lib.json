@@ -21,6 +21,11 @@
             "help": "Non blocking i2c impl (RTOS)",
             "macro_name": "MPU9250_I2C_RTOS_IMPL",
             "value": 0
+        },
+        "no-compass": {
+            "help": "Build without the compass support",
+            "macro_name": "MPU9250_NO_COMPASS_SUPPORT",
+            "value": 1
         }
         
     }

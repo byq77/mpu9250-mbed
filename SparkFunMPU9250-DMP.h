@@ -366,6 +366,7 @@ public:
 
 	///===============
 	void resetDMPgyro(long* out);
+
 	int dmpState(unsigned char enable);
 
 	///================
@@ -378,5 +379,19 @@ private:
 	float qToFloat(long number, unsigned char q);
 	unsigned short orientation_row_2_scale(const signed char *row);
 };
+
+/*
+ * Known Bug -
+ * DMP when enabled will sample sensor data at 200Hz and output to FIFO at the rate
+ * specified in the dmp_set_fifo_rate API. The DMP will then sent an interrupt once
+ * a sample has been put into the FIFO. Therefore if the dmp_set_fifo_rate is at 25Hz
+ * there will be a 25Hz interrupt from the MPU device.
+ *
+ * There is a known issue in which if you do not enable DMP_FEATURE_TAP
+ * then the interrupts will be at 200Hz even if fifo rate
+ * is set at a different rate. To avoid this issue include the DMP_FEATURE_TAP
+ *
+ * DMP sensor fusion works only with gyro at +-2000dps and accel +-2G
+ */
 
 #endif // _SPARKFUN_MPU9250_DMP_H_

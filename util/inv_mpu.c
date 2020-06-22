@@ -40,7 +40,13 @@
 // #include "mdcompat_log.h"
 #define i2c_write(a, b, c, d) mbed_i2c_write(a, b, c, d)
 #define i2c_read(a, b, c, d)  mbed_i2c_read(a, b, c, d)
-#define log_i(...)     do {}while(0)
+
+#if defined(IMU_DEBUG) && IMU_DEBUG > 0 
+    #define log_i(fmt, ...)     do { printf(fmt, ##__VA_ARGS__); } while (0)
+#else
+    #define log_i(...)      do {}while(0)
+#endif
+
 #define log_e(...)     do {}while(0)
 
 #if !defined MPU6050 && !defined MPU9150 && !defined MPU6500 && !defined MPU9250
@@ -59,32 +65,35 @@
  * #define AK8963_SECONDARY
  */
 #if defined MPU9150
-#ifndef MPU6050
-#define MPU6050
-#endif                          /* #ifndef MPU6050 */
-#if defined AK8963_SECONDARY
-#error "MPU9150 and AK8963_SECONDARY cannot both be defined."
-#elif !defined AK8975_SECONDARY /* #if defined AK8963_SECONDARY */
-#define AK8975_SECONDARY
-#endif                          /* #if defined AK8963_SECONDARY */
+    #ifndef MPU6050
+        #define MPU6050
+    #endif                          /* #ifndef MPU6050 */
+    
+    #if defined AK8963_SECONDARY
+        #error "MPU9150 and AK8963_SECONDARY cannot both be defined."
+    #elif !defined AK8975_SECONDARY /* #if defined AK8963_SECONDARY */
+        #define AK8975_SECONDARY
+    #endif
+                              /* #if defined AK8963_SECONDARY */
 #elif defined MPU9250           /* #if defined MPU9150 */
-#ifndef MPU6500
-#define MPU6500
-#endif                          /* #ifndef MPU6500 */
+    #ifndef MPU6500
+        #define MPU6500
+    #endif                          /* #ifndef MPU6500 */
+    
 /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-// #if defined AK8975_SECONDARY
-// #error "MPU9250 and AK8975_SECONDARY cannot both be defined."
-// #elif !defined AK8963_SECONDARY /* #if defined AK8975_SECONDARY */
-// #define AK8963_SECONDARY
-// #endif                          /* #if defined AK8975_SECONDARY */
-// #endif                          /* #if defined MPU9150 */
+    #if defined AK8975_SECONDARY
+        #error "MPU9250 and AK8975_SECONDARY cannot both be defined."
+    #elif !defined AK8963_SECONDARY && !MPU9250_NO_COMPASS_SUPPORT/* #if defined AK8975_SECONDARY */
+        #define AK8963_SECONDARY
+    #endif                          /* #if defined AK8975_SECONDARY */
+#endif                          /* #if defined MPU9150 */
 
-// #if defined AK8975_SECONDARY || defined AK8963_SECONDARY
-// #define AK89xx_SECONDARY
-// #else
-/* #warning "No compass = less profit for Invensense. Lame." */
-/*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+#if defined AK8975_SECONDARY || defined AK8963_SECONDARY
+    #define AK89xx_SECONDARY
+#else
+    #warning "No compass support enabled!"
 #endif
+/*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 
 //static int set_int_enable(unsigned char enable);
 
@@ -2424,6 +2433,8 @@ static int get_st_6500_biases(long *gyro, long *accel, unsigned char hw_test, in
 		packet_count = fifo_count / MAX_PACKET_LENGTH;
 		if ((test.packet_thresh - s) < packet_count)
 		            packet_count = test.packet_thresh - s;
+        // if(debug)
+        //     log_i("packet_count: %u\r\n",packet_count);
 		read_size = packet_count * MAX_PACKET_LENGTH;
 
 		//burst read from FIFO
@@ -2463,12 +2474,11 @@ static int get_st_6500_biases(long *gyro, long *accel, unsigned char hw_test, in
     accel[0] = (long)(((long long)accel[0]<<16) / test.accel_sens / s);
     accel[1] = (long)(((long long)accel[1]<<16) / test.accel_sens / s);
     accel[2] = (long)(((long long)accel[2]<<16) / test.accel_sens / s);
-    /* remove gravity from bias calculation */
+    /* do not remove gravity from bias calculation, it fails C criterium */
     if (accel[2] > 0L)
         accel[2] -= 65536L;
     else
         accel[2] += 65536L;
-
 
     if(debug) {
     	log_i("Accel offset data HWST bit=%d: %7.4f %7.4f %7.4f\r\n", hw_test, accel[0]/65536.f, accel[1]/65536.f, accel[2]/65536.f);
@@ -2532,6 +2542,7 @@ int mpu_run_6500_self_test(long *gyro, long *accel, unsigned char debug)
 
     for (ii = 0; ii < tries; ii++)
         if (!get_st_6500_biases(gyro, accel, 0, debug))
+        // if (!get_st_biases(gyro, accel, 0))
             break;
     if (ii == tries) {
         /* If we reach this point, we most likely encountered an I2C error.
@@ -2549,6 +2560,7 @@ int mpu_run_6500_self_test(long *gyro, long *accel, unsigned char debug)
 
     for (ii = 0; ii < tries; ii++)
         if (!get_st_6500_biases(gyro_st, accel_st, 1, debug))
+        // if (!get_st_biases(gyro_st, accel_st, 1))
             break;
     if (ii == tries) {
 
@@ -2565,6 +2577,7 @@ int mpu_run_6500_self_test(long *gyro, long *accel, unsigned char debug)
     	log_i("Accel Self Test Results: %d\n", accel_result);
 
     gyro_result = gyro_6500_self_test(gyro, gyro_st, debug);
+    // gyro_result = gyro_6500_self_test(gyro, gyro_st, 0);
     if(debug)
     	log_i("Gyro Self Test Results: %d\n", gyro_result);
 
