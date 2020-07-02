@@ -83,7 +83,7 @@
 /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
     #if defined AK8975_SECONDARY
         #error "MPU9250 and AK8975_SECONDARY cannot both be defined."
-    #elif !defined AK8963_SECONDARY && !MPU9250_NO_COMPASS_SUPPORT/* #if defined AK8975_SECONDARY */
+    #elif !defined AK8963_SECONDARY && MPU9250_NO_COMPASS_SUPPORT == 0/* #if defined AK8975_SECONDARY */
         #define AK8963_SECONDARY
     #endif                          /* #if defined AK8975_SECONDARY */
 #endif                          /* #if defined MPU9150 */
